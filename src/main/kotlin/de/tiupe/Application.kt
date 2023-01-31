@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
     */
 }
 
-
+@Suppress("unused")
 fun Application.module(testing: Boolean = false) {
     // Auf die hier gezeigte Art und Weise kann man in ktor Features installieren.
     // ===========================================================================
