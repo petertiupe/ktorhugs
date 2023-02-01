@@ -9,8 +9,24 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
+
+/*
+  Das Routing geht hier noch ein bisschen durcheinander, funktioniert aber.
+  Man kann löschen, hinzufügen, nach einer id Fragen und wenn es diese nicht gibt, wird
+  ein 404 zurückgegeben.
+* */
 fun Application.configureToDoRouting(){
     routing {
+        route("/todos") {
+            get("/{id}") {
+                val id = call.parameters["id"]?.toInt() ?: -1
+                ToDos.getToDoOrNull(id)?.also{
+                    call.respond(it)
+                }?:call.respond(HttpStatusCode.NotFound, "Ein Todo mit dieser ID ist nicht vorhanden")
+            }
+
+        }
+
         get<ToDos> { mytodos: ToDos ->
             call.respond(ToDos.toDos)
         }
@@ -26,6 +42,11 @@ fun Application.configureToDoRouting(){
             val toDoToAdd: ToDo = call.receive<ToDo>()
             val idOfSetToDo = ToDos.setToDo(toDoToAdd)
             call.respond(ToDos.getToDo(idOfSetToDo))
+        }
+
+        delete("/{id}") {
+            val idToDelete = call.parameters["id"]?.toInt() ?: -1
+            call.respond(ToDos.deleteToDo(idToDelete))
         }
     }
 }
@@ -43,7 +64,16 @@ data class ToDo(val id: Int = 0, val txt: String, val priority: Priority = Prior
 object ToDos{
     val toDos: MutableSet<ToDo> = mutableSetOf(ToDo(1, "Füße baumeln lassen"))
 
-    fun getToDo(id: Int) = toDos.first { it.id == id }
+    fun getToDo(id: Int): ToDo = toDos.first { it.id == id }
+
+    fun getToDoOrNull(id: Int): ToDo? {
+        return try {
+            getToDo(id)
+        } catch(nseex: java.util.NoSuchElementException) {
+            null
+        }
+    }
+
 
     fun setToDo(toDo: ToDo): Int {
         val toDoToSet = if(toDo.id == 0)
@@ -51,6 +81,11 @@ object ToDos{
         else toDo
         toDos.add(toDoToSet)
         return toDoToSet.id
+    }
+
+    fun deleteToDo(id: Int): Set<ToDo> {
+        toDos.remove(getToDo(id))
+        return toDos
     }
     private fun nextId(): Int {
         return toDos.maxBy {
