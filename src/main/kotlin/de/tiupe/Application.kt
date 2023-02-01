@@ -1,13 +1,17 @@
 package de.tiupe
 
-import de.tiupe.plugins.configureRouting
-import de.tiupe.plugins.configureSecurity
+import de.tiupe.todo.configureToDoRouting
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.defaultheaders.*
+import io.ktor.server.plugins.doublereceive.*
 import io.ktor.server.request.*
+import io.ktor.server.resources.*
+import kotlinx.serialization.json.Json
 import org.slf4j.event.*
 
 
@@ -43,10 +47,27 @@ fun Application.module(testing: Boolean = false) {
     }
 
     // Feature um alle Requests zu loggen
-    install(CallLogging) {
+    // wirft bei Posts dann einen Fehler, weil der Request bereits empfangen wurde...
+    /*install(CallLogging) {
         level = Level.INFO
         filter { call -> call.request.path().startsWith("/") }
+    }*/
+    // Json-Serialisierung via kotlinx-serialization
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true
+            encodeDefaults = true
+        })
     }
-    configureSecurity()
-    configureRouting()
+
+    install(Resources)
+
+    install(DoubleReceive) {
+
+    }
+
+    // configureSecurity()
+    // configureRouting()
+    configureToDoRouting()
 }
+

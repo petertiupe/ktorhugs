@@ -1,27 +1,37 @@
 package de.tiupe.plugins
 
-import io.ktor.server.routing.*
-import io.ktor.server.response.*
-import io.ktor.server.http.content.*
-import io.ktor.server.plugins.statuspages.*
 import io.ktor.http.*
-import io.ktor.server.resources.*
 import io.ktor.resources.*
-import io.ktor.server.resources.Resources
-import kotlinx.serialization.Serializable
 import io.ktor.server.application.*
 import io.ktor.server.html.*
+import io.ktor.server.http.content.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
+import io.ktor.server.resources.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.html.*
+import kotlinx.serialization.Serializable
 
 fun Application.configureRouting() {
-
+    // hier passiert dasselbe noch einmal wie vorn es werden Plugins installiert, hier sind es die
+    // Status-Pages
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
         }
     }
-    install(Resources)
+
+
+    // Die von der App zu erledigenden Anfragen werden von einer Pipeline verarbeitet. Auf diesem
+    // Pipeline-Objekt sind die Routing-Funktionen wie get, post... definiert.
+
+    // Das ApplicationCall-Objekt übernimmt die Daten für den Request, also für die get, post...
+    // Funktionen...
+
+    // Das Request-Objekt bündelt die Daten in einem Objekt.
+
+
     routing {
         get("/") {
             call.respondText("Hello World!")
