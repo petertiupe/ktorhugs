@@ -4,7 +4,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import de.tiupe.todo.ToDos
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.http.*
@@ -13,6 +12,16 @@ import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.mindrot.jbcrypt.BCrypt
+import java.nio.charset.StandardCharsets.UTF_8
+import java.security.MessageDigest
+
+fun getMd5Digest(str: String): ByteArray = MessageDigest.getInstance("MD5").digest(str.toByteArray(UTF_8))
+
+val myRealm = "/"
+val userTable: Map<String, ByteArray> = mapOf(
+    "peter" to getMd5Digest("peter:$myRealm:pw1"),
+    "tina" to getMd5Digest("tina:$myRealm:pw2")
+)
 
 fun Application.configureSecurity() {
 
@@ -47,6 +56,24 @@ fun Application.configureSecurity() {
                 )
             }
             client = HttpClient(Apache)
+        }
+    }
+    authentication {
+        digest("ktorhugs-diget") {
+            realm = myRealm
+            digestProvider { userName, realm ->
+                // println(userName)
+                userTable[userName]
+            }
+            validate { credentials ->
+                if (credentials.userName.isNotEmpty()) {
+                    // println(credentials.realm)
+                    CustomPrincipal(credentials.userName, credentials.realm)
+                } else {
+                    null
+                }
+            }
+
         }
     }
     authentication {
@@ -86,3 +113,6 @@ val USERS = mapOf<String, String>(
     "lara" to  "\$2a\$10\$MQH1hBRWpu7MPyuxSg4yVO.XwvqKQPjPE8OIm8Vcg1Ya5Bp14lz.2",
     "inken" to "\$2a\$10\$Nh1PpZwLySJWMityohOP2.rYke1u3oOd8N5wunYDM8k6lYs.Ljmvu"
 )
+
+data class CustomPrincipal(val userName: String, val realm: String) : Principal
+

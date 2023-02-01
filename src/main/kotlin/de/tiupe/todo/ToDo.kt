@@ -30,10 +30,11 @@ fun Application.configureToDoRouting() {
             }
 
         }
-
-        get<ToDos> { mytodos: ToDos ->
-            call.respond(ToDos.toDos)
-        }
+            authenticate("ktorhugs-diget") {
+            get<ToDos> { mytodos: ToDos ->
+                call.respond(ToDos.toDos)
+               }
+            }
         get("/todosbypriority") {
             val qp: Parameters = call.request.queryParameters
             val ascending: String = qp["ascending"] ?: ""
