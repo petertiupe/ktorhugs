@@ -1,5 +1,7 @@
 package de.tiupe
 
+import de.tiupe.plugins.configureRouting
+import de.tiupe.plugins.configureSecurity
 import de.tiupe.todo.configureToDoRouting
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -48,10 +50,11 @@ fun Application.module(testing: Boolean = false) {
 
     // Feature um alle Requests zu loggen
     // wirft bei Posts dann einen Fehler, weil der Request bereits empfangen wurde...
-    /*install(CallLogging) {
+    install(CallLogging) {
         level = Level.INFO
         filter { call -> call.request.path().startsWith("/") }
-    }*/
+    }
+
     // Json-Serialisierung via kotlinx-serialization
     install(ContentNegotiation) {
         json(Json {
@@ -66,8 +69,8 @@ fun Application.module(testing: Boolean = false) {
 
     }
 
-    // configureSecurity()
-    // configureRouting()
+    configureSecurity()
+    configureRouting()
     configureToDoRouting()
 }
 

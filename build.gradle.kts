@@ -22,7 +22,6 @@ repositories {
 }
 
 dependencies {
-    // io.ktor:ktor-server-auth, io.ktor:ktor-server-auth-jwt
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
@@ -39,6 +38,13 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("io.ktor:ktor-server-double-receive:$ktor_version")
+    // Key-Derivation-Functions zur Sicherheit nutzen
+    implementation("org.mindrot:jbcrypt:0.4")
+
+
+
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+
 }

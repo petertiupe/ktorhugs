@@ -4,6 +4,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import de.tiupe.todo.ToDos
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.http.*
@@ -11,6 +12,7 @@ import io.ktor.server.sessions.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
+import org.mindrot.jbcrypt.BCrypt
 
 fun Application.configureSecurity() {
 
@@ -47,6 +49,20 @@ fun Application.configureSecurity() {
             client = HttpClient(Apache)
         }
     }
+    authentication {
+        basic("ktorhugs-basicauth") {
+            realm = ""
+            validate { userPwdCredential ->
+
+                if(USERS.containsKey(userPwdCredential.name) &&
+                    BCrypt.checkpw(userPwdCredential.password, USERS[userPwdCredential.name])){
+                    UserIdPrincipal(userPwdCredential.name)
+                } else {
+                    null
+                }
+            }
+        }
+    }
     routing {
         authenticate("auth-oauth-google") {
             get("login") {
@@ -63,3 +79,10 @@ fun Application.configureSecurity() {
 }
 
 class UserSession(accessToken: String)
+
+val USERS = mapOf<String, String>(
+    "tina" to "\$2a\$10\$Op4jdOFZ5Zn.HXZQ2sLhD.IKXewfuE0GbPHR3DIkFlewpeIRyU9za",
+    "peter" to "\$2a\$10\$eLSlcR.6Lw.AaP987gC8M.KUZ/bMNO3ol5AmU7VYL3ESgjcoyvE.2",
+    "lara" to  "\$2a\$10\$MQH1hBRWpu7MPyuxSg4yVO.XwvqKQPjPE8OIm8Vcg1Ya5Bp14lz.2",
+    "inken" to "\$2a\$10\$Nh1PpZwLySJWMityohOP2.rYke1u3oOd8N5wunYDM8k6lYs.Ljmvu"
+)
