@@ -10,10 +10,13 @@ import io.ktor.http.*
 import io.ktor.server.sessions.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import org.mindrot.jbcrypt.BCrypt
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.MessageDigest
+import java.util.*
 
 fun getMd5Digest(str: String): ByteArray = MessageDigest.getInstance("MD5").digest(str.toByteArray(UTF_8))
 
@@ -26,21 +29,30 @@ val userTable: Map<String, ByteArray> = mapOf(
 fun Application.configureSecurity() {
 
     authentication {
-        jwt {
-            val jwtAudience = ""//this@configureSecurity.environment.config.property("jwt.audience").getString()
-            realm = ""//this@configureSecurity.environment.config.property("jwt.realm").getString()
+        jwt("ktorhugs-jwt") {
+            // Die Einträge hier stehen einzeln in der Konfigurationsdatei in dem Resource-Verzeichnis
+            val jwtAudience = this@configureSecurity.environment.config.property("jwt.audience").getString()
+            realm = this@configureSecurity.environment.config.property("jwt.realm").getString()
+            val secret = this@configureSecurity.environment.config.property("jwt.secret").getString()
+            // Hier wird das JW-Token verifiziert, d.h. die Signatur geprüft etc.
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256("secret"))
+                    .require(Algorithm.HMAC256(secret))
                     .withAudience(jwtAudience)
-                    .withIssuer("peterWars")//this@configureSecurity.environment.config.property("jwt.domain").getString())
+                    .withIssuer(this@configureSecurity.environment.config.property("jwt.issuer").getString())
                     .build()
             )
+
             validate { credential ->
                 if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
             }
+            // Wenn das Token nicht validiert werden kann, wird diese Meldung geschickt
+            challenge { defaultScheme, realm ->
+                call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            }
         }
     }
+
     authentication {
         oauth("auth-oauth-google") {
             urlProvider = { "http://localhost:8080/callback" }
@@ -103,6 +115,27 @@ fun Application.configureSecurity() {
             }
         }
     }
+    // post("/login") defines an authentication route for receiving POST requests.
+    // for jwt-Login
+    routing {
+        post("/login") {
+            val jwtUser = call.receive<JWTUser>()
+            // Die Prüfung des Users muss hier passieren.
+            // Sie ist hier mit Username und Passwort bewusst einfach gehalten. Es geht nur um
+            // ein Beispiel. Man könnte hier auch eine verschachtelte Anmeldung wählen....
+            val token = if(jwtUser.password == "geheim") {
+             JWT.create()
+                .withAudience(this@configureSecurity.environment.config.property("jwt.audience").getString())
+                .withIssuer(this@configureSecurity.environment.config.property("jwt.issuer").getString())
+                .withClaim("username", jwtUser.username)
+                .withExpiresAt(Date(System.currentTimeMillis() + 3600000)) // eine Stunde...
+                .sign(Algorithm.HMAC256(this@configureSecurity.environment.config.property("jwt.secret").getString()))
+            } else {
+                "" // to avoid null-pointer-exceptions
+            }
+            call.respond(hashMapOf("token" to token))
+        }
+    }
 }
 
 class UserSession(accessToken: String)
@@ -115,4 +148,8 @@ val USERS = mapOf<String, String>(
 )
 
 data class CustomPrincipal(val userName: String, val realm: String) : Principal
+
+// User-Klasse für den Login-Prozess beim JWT-Erstellen
+@Serializable
+data class JWTUser(val username: String, val password: String)
 

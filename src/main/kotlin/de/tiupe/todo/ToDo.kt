@@ -43,15 +43,18 @@ fun Application.configureToDoRouting() {
             else
                 call.respond(ToDos.getByPriority())
         }
+
         post<ToDo>("/") {
             val toDoToAdd: ToDo = call.receive<ToDo>()
             val idOfSetToDo = ToDos.setToDo(toDoToAdd)
             call.respond(ToDos.getToDo(idOfSetToDo))
         }
 
-        delete("/{id}") {
-            val idToDelete = call.parameters["id"]?.toInt() ?: -1
-            call.respond(ToDos.deleteToDo(idToDelete))
+        authenticate("ktorhugs-jwt") {
+            delete("/{id}") {
+                val idToDelete = call.parameters["id"]?.toInt() ?: -1
+                call.respond(ToDos.deleteToDo(idToDelete))
+            }
         }
     }
 }
