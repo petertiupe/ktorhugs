@@ -54,24 +54,43 @@ fun Application.configureSecurity() {
     }
 
     authentication {
-        oauth("auth-oauth-google") {
-            urlProvider = { "http://localhost:8080/callback" }
+        oauth("ktorhugs-oauth-google") {
+            // Gibt die Rücksprung-Adresse vom OAuth-Server an, wenn die Authentifizierung
+            // erfolgt ist. Diese Adresse muss in der Regel beim Auth-Provider als valide
+            // Rücksprung-Adresse eingetragen sein, sonst erfolgt der Aufruf dorthin nicht.
+            urlProvider = { "http://localhost:8081/callback" }
+
+            // Insgesamt wird in dieser Sektion, also im Provider-Lookup festgelegt,
+            // wie mit dem Authentication-Provider zu kommunizieren ist.
+            // Wenn man über die Klasse fährt, sieht man sehr gut, welche Parameter
+            // eingestellt werden können.
             providerLookup = {
                 OAuthServerSettings.OAuth2ServerSettings(
                     name = "google",
+                    // Gegen diese Url findet die Authorisierung statt
                     authorizeUrl = "https://accounts.google.com/o/oauth2/auth",
+                    // von dieser Url wird das Access-Token bezogen, in dem steht,
+                    // mit welchen Rechten der User auf die Resourcen des "Drittanbieters"
+                    // zugreifen darf.
                     accessTokenUrl = "https://accounts.google.com/o/oauth2/token",
+
                     requestMethod = HttpMethod.Post,
+                    // Mit der Client-ID werden die Daten von Google geholt, leider war die
+                    // Einrichtung nicht so trivial wie gehofft.
                     clientId = System.getenv("GOOGLE_CLIENT_ID"),
                     clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
+
+                    // Zugriff auf die Google-Api, um das Profil des Nutzers zu laden
                     defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile")
                 )
             }
+            // mit dem hier eingetragenen Client werden die Anfragen an den
+            // OAuth-Server durchgeführt. Hier ein Apache-HTTP-Client
             client = HttpClient(Apache)
         }
     }
     authentication {
-        digest("ktorhugs-diget") {
+        digest("ktorhugs-digest") {
             realm = myRealm
             digestProvider { userName, realm ->
                 // println(userName)
@@ -103,14 +122,30 @@ fun Application.configureSecurity() {
         }
     }
     routing {
-        authenticate("auth-oauth-google") {
+        authenticate("ktorhugs-oauth-google") {
+            // Dies ist die URL mit der man sich ds AUTH-Token von google holt
+            // Es fehlt die GOOGLE-Client-ID für eine Anwendung...
             get("login") {
+                // hier wird der Login-Prozess aufgerufen, da die URL mit dem
+                // entsprechenden Authentifizierungsmechanismus abgesichert ist.
+                // Anschließend wird einfach an die callback-Url weitergeleitet.
+                // Das erklärt auch, warum in dem Callback eine
+                // "localhost"-Adresse stehen darf.
+
+                // Redirects automatisch zur 'authorizeUrl'
+
                 call.respondRedirect("/callback")
             }
 
             get("/callback") {
+                // hier landet der Callback von der Authentifizierung,
+                // Mann kan hier die Eigenschaften des Tokens auslesen und sich
+                // mit seiner eigenen Logik einklinken.
                 val principal: OAuthAccessTokenResponse.OAuth2? = call.authentication.principal()
                 call.sessions.set(UserSession(principal?.accessToken.toString()))
+
+                // auch hier wird nochmals ein Redirect gemacht, der wie immer über den
+                // Browser läuft.
                 call.respondRedirect("/hello")
             }
         }

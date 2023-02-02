@@ -30,7 +30,7 @@ fun Application.configureToDoRouting() {
             }
 
         }
-            authenticate("ktorhugs-diget") {
+            authenticate("ktorhugs-digest") {
             get<ToDos> { mytodos: ToDos ->
                 call.respond(ToDos.toDos)
                }
