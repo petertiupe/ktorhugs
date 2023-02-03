@@ -44,6 +44,7 @@ dependencies {
 
     // Key-Derivation-Functions zur Sicherheit nutzen
     implementation("org.mindrot:jbcrypt:0.4")
+    implementation("io.ktor:ktor-client-logging-jvm:2.2.3")
 
 
 
