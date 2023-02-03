@@ -50,6 +50,8 @@ fun main() {
         // die Fehlermeldung:
         //      "Parent job is Completed;"
         // Hier funktioniert dies nur, weil nur der zweite Aufruf mit "use" erfolgt
+        // Das Erzeugen eines Clients ist teuer, man sollte daher immer besser die Instanz
+        // erhalten, wenn man mehrere davon braucht, als sie jedes Mal neu zu erzeugen.
         ktorClient.close()
 
     }
