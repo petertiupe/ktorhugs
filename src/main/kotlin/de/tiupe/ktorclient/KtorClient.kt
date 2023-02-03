@@ -2,9 +2,13 @@ package de.tiupe.ktorclient
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.http.ContentType
 import kotlinx.coroutines.runBlocking
 
 
@@ -42,8 +46,9 @@ fun main() {
     }
     runBlocking {
         // Auch diese beiden Calls laufen komplett synchron ab.
-        callTiupe(ktorClient)
-        callPeter(ktorClient)
+        callTodosWithDigestAuth()
+        // callTiupe(ktorClient)
+        // callPeter(ktorClient)
         // Nach der Verwendung des Clients sollte man diesen schließen oder
         // nur mit "use" arbeiten, dann wird er automatisch geschlossen.
         // Dann kann man den Client aber nur einmalig verwenden und bekommt ansonten
@@ -59,7 +64,7 @@ fun main() {
 }
 
 suspend fun callTiupe(ktorClient: HttpClient) {
-    // Der Aufruf hier erfolgt vollständig snychron, nur weil ich das immer wieder gerne
+    // Der Aufruf hier erfolgt vollständig synchron, nur weil ich das immer wieder gerne
     // vergesse.
     // Wenn man den Network - Client (hier Apache) weglässt, versucht der ktor-client
     // diesen automatisch anhand der Abhängigkeiten zu setzen.
@@ -76,3 +81,27 @@ suspend fun callPeter(ktorClient: HttpClient) {
         println("Status-Code der Antwort Peter ist: ${responsePeter.status}")
     }
 }
+
+suspend fun callTodosWithDigestAuth() {
+    // Die Erklärung für den Flow ist auf der Seite https://ktor.io/docs/digest-client.html nachzulesen
+    val client = HttpClient() {
+        install(Auth) {
+            digest {
+                credentials {
+                    DigestAuthCredentials(username = "peter", password = "pw1")
+                }
+                realm = "/"
+            }
+        }
+    }
+
+    val urlToCall = "http://localhost:8081/todos"
+    val response = client.get {
+        accept(ContentType.Application.Json)
+        charset("UTF-8")
+        url(urlToCall)
+    }
+    println(response.bodyAsText())
+
+}
+
